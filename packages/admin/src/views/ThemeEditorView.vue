@@ -148,7 +148,7 @@ function isActiveTheme(t: { isActive: number | boolean }) {
   return Number(t.isActive) === 1 || t.isActive === true
 }
 
-async function onDeleteTheme(t: { id: number; name: string; isActive: number | boolean }) {
+async function onDeleteTheme(t: { id: number; name: string; isActive: number | boolean; isBuiltin?: number | boolean }) {
   if (isBuiltin(t)) {
     ElMessage.warning('默认主题不支持删除')
     return

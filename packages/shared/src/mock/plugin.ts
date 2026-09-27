@@ -584,7 +584,7 @@ export function createMockApiPlugin(): Plugin {
           let md = headEnd >= 0 ? raw.slice(headEnd + 4) : ''
           const boundary = /^--([^\r\n]+)/.exec(raw)?.[1]
           if (boundary) md = md.replace(new RegExp(`--${boundary}[\\s\\S]*$`), '')
-          const status = q.status || 'draft'
+          const status = (q.status || 'draft') as ArticleItem['status']
           const id = Math.max(...MOCK_ARTICLES.map((a) => a.id)) + 1
           const now = new Date().toISOString().slice(0, 19).replace('T', ' ')
           const article = {
