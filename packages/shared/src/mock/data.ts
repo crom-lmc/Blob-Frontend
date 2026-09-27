@@ -271,6 +271,11 @@ export function getArticleContent(id: number) {
   return CONTENT[id] || { md: '', html: '' }
 }
 
+/** 写入文章正文（Markdown 导入等场景使用） */
+export function setArticleContent(id: number, md: string) {
+  CONTENT[id] = { md, html: renderMarkdown(md) }
+}
+
 export function toDetail(a: ArticleItem): ArticleDetail {
   const content = getArticleContent(a.id)
   return { ...a, contentMd: content.md, contentHtml: content.html, related: [], prev: null, next: null }

@@ -14,7 +14,8 @@ import {
   activeThemePayload,
   recalcCounts,
   toDetail,
-  getArticleContent
+  getArticleContent,
+  setArticleContent
 } from './data'
 import { themeCss } from '../theme/css'
 import { THEME_PRESETS } from '../theme/presets'
@@ -57,6 +58,17 @@ function buildFolderTree(): MediaFolderNode[] {
   }
   sortRec(roots)
   return roots
+}
+
+/** 解析上传目标目录：folderId 优先，其次按 folder 名称回退到首个目录 */
+function resolveFolder(folderIdRaw: any, folderNameRaw: any) {
+  let folderId = Number(folderIdRaw)
+  if (!Number.isFinite(folderId) || folderId <= 0) {
+    const byName = folderNameRaw ? MOCK_MEDIA_FOLDERS.find((f) => f.name === folderNameRaw) : undefined
+    folderId = byName ? byName.id : MOCK_MEDIA_FOLDERS[0].id
+  }
+  const folder = MOCK_MEDIA_FOLDERS.find((f) => f.id === folderId)?.name || String(folderNameRaw || 'default')
+  return { folderId, folder }
 }
 
 /** 读取原始请求体（multipart 等非 JSON 场景使用） */
@@ -542,6 +554,66 @@ export function createMockApiPlugin(): Plugin {
           recalcCounts()
           return json(res, (body.ids || []).length)
         }
+        if (/^\/api\/admin\/articles\/\d+\/export$/.test(path) && method === 'GET') {
+          const id = Number(path.split('/')[4])
+          const a = MOCK_ARTICLES.find((x) => x.id === id)
+          if (!a) return fail(res, '文章不存在', 404)
+          const { md } = getArticleContent(id)
+          const frontMatter = [
+            '---',
+            `title: ${a.title}`,
+            `slug: ${a.slug}`,
+            a.summary ? `summary: ${a.summary}` : '',
+            `status: ${a.status}`,
+            a.categoryName ? `category: ${a.categoryName}` : '',
+            a.tags?.length ? `tags: [${a.tags.map((t) => t.name).join(', ')}]` : '',
+            `created_at: ${a.createdAt}`,
+            '---',
+            ''
+          ]
+            .filter(Boolean)
+            .join('\n')
+          return json(res, { markdown: `${frontMatter}${md}` })
+        }
+        if (path === '/api/admin/articles/import' && method === 'POST') {
+          // multipart：解析出文件名与 Markdown 正文（前端以 file 字段提交）
+          const raw = await readRaw(req)
+          const nameMatch = /filename="([^"]+)"/.exec(raw)
+          const fileName = nameMatch ? nameMatch[1] : 'imported.md'
+          const headEnd = raw.indexOf('\r\n\r\n')
+          let md = headEnd >= 0 ? raw.slice(headEnd + 4) : ''
+          const boundary = /^--([^\r\n]+)/.exec(raw)?.[1]
+          if (boundary) md = md.replace(new RegExp(`--${boundary}[\\s\\S]*$`), '')
+          const status = q.status || 'draft'
+          const id = Math.max(...MOCK_ARTICLES.map((a) => a.id)) + 1
+          const now = new Date().toISOString().slice(0, 19).replace('T', ' ')
+          const article = {
+            ...MOCK_ARTICLES[0],
+            id,
+            title: fileName.replace(/\.md$/i, '') || `导入文章 ${id}`,
+            slug: `imported-${id}`,
+            summary: md.replace(/[#>*`\-]/g, '').trim().slice(0, 120),
+            cover: '',
+            status,
+            categoryId: 0,
+            categoryName: '未分类',
+            tags: [],
+            authorId: currentUser?.id ?? 1,
+            viewCount: 0,
+            likeCount: 0,
+            commentCount: 0,
+            wordCount: md.replace(/\s/g, '').length,
+            isTop: false,
+            allowComment: true,
+            publishedAt: status === 'published' ? now : '',
+            createdAt: now,
+            updatedAt: now
+          }
+          MOCK_ARTICLES.push(article)
+          setArticleContent(id, md)
+          recalcCounts()
+          return json(res, { id })
+        }
 
         /* ------- 分类 / 标签 ------- */
         if (path === '/api/admin/categories' && method === 'GET') {
@@ -575,6 +647,16 @@ export function createMockApiPlugin(): Plugin {
           MOCK_CATEGORIES[idx] = { ...MOCK_CATEGORIES[idx], ...body }
           return json(res, MOCK_CATEGORIES[idx])
         }
+        if (path === '/api/admin/categories/sort' && method === 'PUT') {
+          // 请求体为 id 数组，按传入顺序重算 sort
+          const ids: number[] = (await readBody(req)) || []
+          ids.forEach((cid, i) => {
+            const c = MOCK_CATEGORIES.find((x) => x.id === cid)
+            if (c) c.sort = i + 1
+          })
+          recalcCounts()
+          return json(res, null)
+        }
         if (path === '/api/admin/tags' && method === 'GET') {
           recalcCounts()
           return json(res, MOCK_TAGS)
@@ -603,6 +685,23 @@ export function createMockApiPlugin(): Plugin {
           const body = await readBody(req)
           MOCK_TAGS[idx] = { ...MOCK_TAGS[idx], ...body }
           return json(res, MOCK_TAGS[idx])
+        }
+        if (path === '/api/admin/tags/merge' && method === 'POST') {
+          // sourceId 下的文章全部迁移到 targetId，随后删除 sourceId
+          const body = await readBody(req)
+          const source = MOCK_TAGS.find((t) => t.id === Number(body.sourceId))
+          const target = MOCK_TAGS.find((t) => t.id === Number(body.targetId))
+          if (!source || !target) return fail(res, '标签不存在', 404)
+          MOCK_ARTICLES.forEach((a) => {
+            if (!a.tags?.some((t) => t.id === source.id)) return
+            const hasTarget = a.tags.some((t) => t.id === target.id)
+            a.tags = hasTarget
+              ? a.tags.filter((t) => t.id !== source.id)
+              : a.tags.map((t) => (t.id === source.id ? { ...target } : t))
+          })
+          MOCK_TAGS.splice(MOCK_TAGS.indexOf(source), 1)
+          recalcCounts()
+          return json(res, null)
         }
 
         /* ------- 评论 ------- */
@@ -669,8 +768,18 @@ export function createMockApiPlugin(): Plugin {
           return json(res, Array.from(new Set(MOCK_MEDIA.map((m) => m.folder || 'default'))))
         }
         if (path === '/api/admin/media' && method === 'GET') {
-          const folder = q.folder || ''
-          const list = folder ? MOCK_MEDIA.filter((m) => m.folder === folder) : MOCK_MEDIA
+          // folderId：不传=全部，0=未分组，>0=指定目录（与后端一致）
+          const folderId = q.folderId !== undefined && q.folderId !== '' ? Number(q.folderId) : undefined
+          const keyword = (q.keyword || '').trim().toLowerCase()
+          let list = MOCK_MEDIA
+          if (folderId !== undefined) {
+            list = folderId === 0 ? list.filter((m) => !m.folderId) : list.filter((m) => m.folderId === folderId)
+          } else if (q.folder) {
+            list = list.filter((m) => m.folder === q.folder)
+          }
+          if (keyword) {
+            list = list.filter((m) => (m.originalName || m.fileName || '').toLowerCase().includes(keyword))
+          }
           return json(res, paginate([...list].reverse(), num(q.page, 1), num(q.size, 50)))
         }
         if (path === '/api/admin/media/batch/delete' && method === 'POST') {
@@ -708,6 +817,7 @@ export function createMockApiPlugin(): Plugin {
         if (path === '/api/admin/media/upload' && method === 'POST') {
           const body = await readBody(req)
           const id = Math.max(...MOCK_MEDIA.map((m) => m.id)) + 1
+          const { folderId, folder } = resolveFolder(q.folderId ?? body.folderId, q.folder ?? body.folder)
           const item = {
             id,
             fileName: body.fileName || `upload-${id}.jpg`,
@@ -717,10 +827,84 @@ export function createMockApiPlugin(): Plugin {
             size: Number(body.size || 204800),
             width: Number(body.width || 600),
             height: Number(body.height || 400),
-            folder: body.folder || 'default',
+            folder,
+            folderId,
             createdAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
           }
           MOCK_MEDIA.push(item)
+          return json(res, item)
+        }
+
+        /* ------- 媒体目录树（t_media_folder） ------- */
+        if (path === '/api/admin/media/folders/tree' && method === 'GET') {
+          return json(res, buildFolderTree())
+        }
+        if (path === '/api/admin/media/folders' && method === 'POST') {
+          const body = await readBody(req)
+          const id = Math.max(0, ...MOCK_MEDIA_FOLDERS.map((f) => f.id)) + 1
+          MOCK_MEDIA_FOLDERS.push({
+            id,
+            name: body.name || `目录${id}`,
+            parentId: Number(body.parentId || 0),
+            sort: 0
+          })
+          return json(res, id)
+        }
+        if (/^\/api\/admin\/media\/folders\/\d+$/.test(path) && method === 'PUT') {
+          const id = Number(path.split('/').pop())
+          const f = MOCK_MEDIA_FOLDERS.find((x) => x.id === id)
+          if (!f) return fail(res, '目录不存在', 404)
+          const body = await readBody(req)
+          if (body.name) f.name = body.name
+          return json(res, null)
+        }
+        if (/^\/api\/admin\/media\/folders\/\d+$/.test(path) && method === 'DELETE') {
+          const id = Number(path.split('/').pop())
+          const f = MOCK_MEDIA_FOLDERS.find((x) => x.id === id)
+          if (!f) return fail(res, '目录不存在', 404)
+          // 与后端一致：仅空目录（无子目录且无文件）可删除
+          if (MOCK_MEDIA_FOLDERS.some((x) => x.parentId === id) || MOCK_MEDIA.some((m) => m.folderId === id)) {
+            return fail(res, '仅空目录可删除', 400)
+          }
+          MOCK_MEDIA_FOLDERS.splice(MOCK_MEDIA_FOLDERS.indexOf(f), 1)
+          return json(res, null)
+        }
+
+        /* ------- 分片上传 ------- */
+        if (path === '/api/admin/media/upload/chunk/init' && method === 'POST') {
+          const body = await readBody(req)
+          const uploadId = body.uploadId || `chunk-${Date.now()}`
+          CHUNK_STORE.set(uploadId, [])
+          return json(res, uploadId)
+        }
+        if (path === '/api/admin/media/upload/chunk' && method === 'POST') {
+          const uploadId = String(q.uploadId || '')
+          const index = Number(q.index)
+          const parts = CHUNK_STORE.get(uploadId)
+          if (!parts) return fail(res, '分片任务不存在，请先初始化', 400)
+          if (!parts.includes(index)) parts.push(index)
+          return json(res, null)
+        }
+        if (path === '/api/admin/media/upload/chunk/merge' && method === 'POST') {
+          const body = await readBody(req)
+          const id = Math.max(...MOCK_MEDIA.map((m) => m.id)) + 1
+          const { folderId, folder } = resolveFolder(body.folderId, body.folder)
+          const name = body.originalName || `chunk-${id}.jpg`
+          const item = {
+            id,
+            fileName: name,
+            originalName: name,
+            url: `https://picsum.photos/seed/chunk${id}/600/400`,
+            mimeType: body.contentType || 'image/jpeg',
+            size: 1024 * 512,
+            width: 600,
+            height: 400,
+            folder,
+            folderId,
+            createdAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+          }
+          MOCK_MEDIA.push(item)
+          CHUNK_STORE.delete(body.uploadId)
           return json(res, item)
         }
 
@@ -793,8 +977,33 @@ export function createMockApiPlugin(): Plugin {
         }
         if (path === '/api/admin/logs' && method === 'GET') {
           const module = q.module || ''
-          const list = module ? MOCK_LOGS.filter((l) => l.module === module) : MOCK_LOGS
+          const action = q.action || ''
+          const keyword = (q.keyword || '').trim().toLowerCase()
+          let list = MOCK_LOGS
+          if (module) list = list.filter((l) => l.module === module)
+          if (action) list = list.filter((l) => l.action === action)
+          if (keyword) {
+            list = list.filter(
+              (l) =>
+                (l.module || '').toLowerCase().includes(keyword) ||
+                (l.action || '').toLowerCase().includes(keyword) ||
+                (l.username || '').toLowerCase().includes(keyword)
+            )
+          }
           return json(res, paginate([...list].reverse(), num(q.page, 1), num(q.size, 10)))
+        }
+        if (path === '/api/admin/logs/clean' && method === 'DELETE') {
+          const days = Number(q.days || 90)
+          const before = Date.now() - days * 24 * 60 * 60 * 1000
+          let removed = 0
+          for (let i = MOCK_LOGS.length - 1; i >= 0; i--) {
+            const ts = Date.parse(String(MOCK_LOGS[i].createdAt || '').replace(' ', 'T'))
+            if (Number.isFinite(ts) && ts < before) {
+              MOCK_LOGS.splice(i, 1)
+              removed++
+            }
+          }
+          return json(res, removed)
         }
 
         /* ------- 主题（与后端 AdminThemeController 同构） ------- */
