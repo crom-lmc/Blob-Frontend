@@ -1,0 +1,66 @@
+/**
+ * 后台全局样式
+ * 后台使用 Element Plus，同时尽量复用站点主题变量（--color-primary 等），
+ * 使后台与前台主色保持一致。
+ */
+
+:root {
+  --admin-sidebar-width: 220px;
+  --admin-header-height: 56px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 14px;
+  color: var(--el-text-color-primary);
+  background: var(--el-bg-color-page);
+}
+
+/* Element Plus 主色跟随站点主题变量（主题编辑器保存后同步） */
+:root {
+  --el-color-primary: var(--color-primary, #4f46e5);
+  --el-border-radius-base: 8px;
+}
+
+.admin-page {
+  padding: 16px;
+}
+
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.admin-toolbar .spacer {
+  flex: 1;
+}
+
+.stat-card {
+  border-radius: 10px;
+}
+
+.text-muted {
+  color: var(--el-text-color-secondary);
+}
+
+/* 窄屏下后台表格横向滚动 */
+@media (max-width: 640px) {
+  .admin-page {
+    padding: 10px;
+  }
+}

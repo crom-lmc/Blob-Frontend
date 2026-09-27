@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>博客</title>
+    <meta name="description" content="动态主题博客系统" />
+    <!--
+      首屏防闪烁脚本：
+      1. 读取 localStorage 中缓存的主题 CSS（含 CSS 变量），立即注入 <style id="theme-vars">
+      2. 按 dark.defaultMode 设置 <html data-theme>
+      这样在 Vue 应用与接口返回之前，页面已经拥有正确的颜色，避免闪白。
+    -->
+    <script>
+      ;(function () {
+        try {
+          var raw = localStorage.getItem('blog.theme.cache')
+          if (!raw) return
+          var cache = JSON.parse(raw)
+          if (cache && cache.css) {
+            var style = document.createElement('style')
+            style.id = 'theme-vars'
+            style.textContent = cache.css
+            document.head.appendChild(style)
+          }
+          var mode = (cache && cache.mode) || 'system'
+          var isDark =
+            mode === 'dark' ||
+            (mode === 'system' &&
+              window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.dataset.theme = isDark ? 'dark' : 'light'
+        } catch (e) {
+          /* 缓存损坏时忽略，走默认变量 */
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="app">
+      <!-- 首屏骨架：主题加载前的占位，避免完全空白 -->
+      <div class="boot-skeleton"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+    <style>
+      .boot-skeleton {
+        min-height: 60vh;
+        background: var(--color-bg, #fff);
+      }
+    </style>
+  </body>
+</html>
