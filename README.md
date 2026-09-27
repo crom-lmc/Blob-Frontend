@@ -1,6 +1,6 @@
 # 博客系统前端（前台 + 后台）
 
-配套后端：`F:\code\Blob`（Spring Boot 3 + MyBatis-Plus 3.5.7 + MySQL 5.7 + Redis，端口 `8080`）。
+配套后端：`https://github.com/crom-lmc/Blob-Backend`（Spring Boot 3 + MyBatis-Plus 3.5.7 + MySQL 5.7 + Redis，端口 `8080`）。
 前端只做展示与交互，**所有样式由后台下发的主题配置驱动**。
 
 ## 目录结构
