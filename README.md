@@ -82,41 +82,75 @@ npm run build
 
 ## 界面预览
 
+> 点击任意截图可查看原图。
+
 ### 前台（读者端）
 
-| 首页 | 文章列表 |
-| :---: | :---: |
-| ![首页](docs/screenshots/web-home.png) | ![文章列表](docs/screenshots/web-posts.png) |
+**首页**
 
-| 分类 | 标签 |
-| :---: | :---: |
-| ![分类](docs/screenshots/web-categories.png) | ![标签](docs/screenshots/web-tags.png) |
+[![首页](docs/screenshots/web-home.png)](docs/screenshots/web-home.png)
 
-| 归档 | 关于 |
-| :---: | :---: |
-| ![归档](docs/screenshots/web-archives.png) | ![关于](docs/screenshots/web-about.png) |
+**文章列表**
+
+[![文章列表](docs/screenshots/web-posts.png)](docs/screenshots/web-posts.png)
+
+**分类**
+
+[![分类](docs/screenshots/web-categories.png)](docs/screenshots/web-categories.png)
+
+**标签**
+
+[![标签](docs/screenshots/web-tags.png)](docs/screenshots/web-tags.png)
+
+**归档**
+
+[![归档](docs/screenshots/web-archives.png)](docs/screenshots/web-archives.png)
+
+**关于**
+
+[![关于](docs/screenshots/web-about.png)](docs/screenshots/web-about.png)
 
 ### 后台（管理端）
 
-| 仪表盘 | 文章管理 |
-| :---: | :---: |
-| ![仪表盘](docs/screenshots/admin-dashboard.png) | ![文章管理](docs/screenshots/admin-articles.png) |
+**仪表盘**
 
-| 分类管理 | 标签管理 |
-| :---: | :---: |
-| ![分类管理](docs/screenshots/admin-categories.png) | ![标签管理](docs/screenshots/admin-tags.png) |
+[![仪表盘](docs/screenshots/admin-dashboard.png)](docs/screenshots/admin-dashboard.png)
 
-| 评论管理 | 媒体库 |
-| :---: | :---: |
-| ![评论管理](docs/screenshots/admin-comments.png) | ![媒体库](docs/screenshots/admin-media.png) |
+**文章管理**
 
-| 主题编辑器 | 站点设置 |
-| :---: | :---: |
-| ![主题编辑器](docs/screenshots/admin-theme-editor.png) | ![站点设置](docs/screenshots/admin-settings.png) |
+[![文章管理](docs/screenshots/admin-articles.png)](docs/screenshots/admin-articles.png)
 
-| 用户管理 | 操作日志 |
-| :---: | :---: |
-| ![用户管理](docs/screenshots/admin-users.png) | ![操作日志](docs/screenshots/admin-logs.png) |
+**分类管理**
+
+[![分类管理](docs/screenshots/admin-categories.png)](docs/screenshots/admin-categories.png)
+
+**标签管理**
+
+[![标签管理](docs/screenshots/admin-tags.png)](docs/screenshots/admin-tags.png)
+
+**评论管理**
+
+[![评论管理](docs/screenshots/admin-comments.png)](docs/screenshots/admin-comments.png)
+
+**媒体库**
+
+[![媒体库](docs/screenshots/admin-media.png)](docs/screenshots/admin-media.png)
+
+**主题编辑器**
+
+[![主题编辑器](docs/screenshots/admin-theme-editor.png)](docs/screenshots/admin-theme-editor.png)
+
+**站点设置**
+
+[![站点设置](docs/screenshots/admin-settings.png)](docs/screenshots/admin-settings.png)
+
+**用户管理**
+
+[![用户管理](docs/screenshots/admin-users.png)](docs/screenshots/admin-users.png)
+
+**操作日志**
+
+[![操作日志](docs/screenshots/admin-logs.png)](docs/screenshots/admin-logs.png)
 
 ## 已实现功能
 
