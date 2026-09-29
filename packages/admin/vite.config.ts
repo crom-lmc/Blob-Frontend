@@ -7,11 +7,14 @@ import { createMockApiPlugin } from '../shared/src/mock/plugin'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
   const useMock = env.VITE_USE_MOCK !== 'false'
-  // 前台地址：主题编辑器预览 iframe 指向它
-  const webOrigin = env.VITE_WEB_ORIGIN || 'http://localhost:5173'
+  const webHost = env.VITE_WEB_HOST || 'localhost'
+  const webPort = Number(env.VITE_WEB_PORT || 5173)
+  const adminPort = Number(env.VITE_ADMIN_PORT || 5174)
+  const apiTarget = env.VITE_API_TARGET || `http://${webHost}:8080`
+  const webOrigin = env.VITE_WEB_ORIGIN || `http://${webHost}:${webPort}`
 
   return {
-    plugins: [vue(), ...(useMock ? [createMockApiPlugin()] : [])],
+    plugins: [vue(), ...(useMock ? [createMockApiPlugin({ webOrigin })] : [])],
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -22,13 +25,13 @@ export default defineConfig(({ mode }) => {
       __WEB_ORIGIN__: JSON.stringify(webOrigin)
     },
     server: {
-      port: 5174,
+      port: adminPort,
       host: true,
       proxy: useMock
         ? undefined
         : {
-            '/api': { target: env.VITE_API_TARGET || 'http://localhost:8080', changeOrigin: true },
-            '/uploads': { target: env.VITE_API_TARGET || 'http://localhost:8080', changeOrigin: true }
+            '/api': { target: apiTarget, changeOrigin: true },
+            '/uploads': { target: apiTarget, changeOrigin: true }
           }
     },
     build: { outDir: 'dist', chunkSizeWarningLimit: 1500 }

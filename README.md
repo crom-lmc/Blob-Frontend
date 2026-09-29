@@ -21,22 +21,27 @@ blog-frontend
 ```bash
 npm install                 # 根目录 workspaces 安装
 
-npm run dev:web             # 前台 http://localhost:5173
-npm run dev:admin           # 后台 http://localhost:5174
+npm run dev:web             # 前台：默认 http://localhost:5173
+npm run dev:admin           # 后台：默认 http://localhost:5174
 ```
 
 默认开启内置 Mock（`VITE_USE_MOCK` 不等于 `false`），**无需后端即可完整体验**。
-接后端时复制 `.env.example` 为 `.env`（或直接设置环境变量）：
+可通过环境变量覆盖启动端口与地址，按启动环境决定加载哪个域名/端口：
 
 ```bash
 # packages/web/.env
 VITE_USE_MOCK=false
+VITE_WEB_HOST=localhost
+VITE_WEB_PORT=5173
 VITE_API_TARGET=http://localhost:8080
 
 # packages/admin/.env
 VITE_USE_MOCK=false
+VITE_WEB_HOST=localhost
+VITE_WEB_PORT=5173
+VITE_ADMIN_PORT=5174
 VITE_API_TARGET=http://localhost:8080
-VITE_WEB_ORIGIN=http://localhost:5173   # 主题编辑器 iframe 预览地址
+VITE_WEB_ORIGIN=http://localhost:5173   # 主题编辑器 iframe 预览地址，可覆盖自动拼接结果
 ```
 
 关闭 Mock 后，Vite 会把 `/api` 代理到 `VITE_API_TARGET`（后端已开启 CORS `allowedOriginPatterns("*")`）。

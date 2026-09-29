@@ -255,14 +255,16 @@ function dashboardStats() {
   }
 }
 
-export function createMockApiPlugin(): Plugin {
+export function createMockApiPlugin(options: { webOrigin?: string } = {}): Plugin {
+  const webOrigin = options.webOrigin || 'http://localhost:5173'
+
   return {
     name: 'blog-mock-api',
     configureServer(server) {
       server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
         const url = req.url || ''
         if (!url.startsWith('/api/')) return next()
-        const u = new URL(url, 'http://localhost')
+        const u = new URL(url, webOrigin)
         const path = u.pathname.replace(/\/+$/, '') || '/'
         const q: Record<string, string> = {}
         u.searchParams.forEach((v, k) => (q[k] = v))
@@ -390,7 +392,7 @@ export function createMockApiPlugin(): Plugin {
           res.statusCode = 200
           res.setHeader('Content-Type', 'application/xml; charset=utf-8')
           const urls = MOCK_ARTICLES.filter((a) => a.status === 'published')
-            .map((a) => `  <url><loc>http://localhost:5173/posts/${a.slug}</loc></url>`)
+            .map((a) => `  <url><loc>${new URL(`/posts/${a.slug}`, webOrigin).toString()}</loc></url>`)
             .join('\n')
           res.end(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`)
           return
