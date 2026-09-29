@@ -8,6 +8,9 @@ const alt = ref('')
 function onClick(e: MouseEvent) {
   const target = e.target as HTMLElement
   if (target.tagName !== 'IMG') return
+  // 图片本身在链接里（如文章卡片封面 → 文章详情、正文里的图片链接）：
+  // 不弹预览，交给链接自己跳转
+  if (target.closest('a')) return
   const host = target.closest('.markdown-body, .media-grid, .post-card')
   if (!host) return
   src.value = (target as HTMLImageElement).currentSrc || (target as HTMLImageElement).src
