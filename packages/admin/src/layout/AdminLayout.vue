@@ -14,11 +14,20 @@ const auth = useAuthStore()
 const collapsed = ref(false)
 
 /** 站点 logo（公开接口，无需管理员权限）；为空时回退为字母块 */
+const apiOrigin = (import.meta.env.VITE_API_TARGET as string) || 'http://localhost:8080'
 const siteLogo = ref('')
+
+function resolveAssetUrl(rawUrl: string) {
+  if (!rawUrl) return ''
+  if (/^(https?:)?\/\//i.test(rawUrl) || rawUrl.startsWith('data:')) return rawUrl
+  if (!apiOrigin) return rawUrl
+  return new URL(rawUrl, apiOrigin).toString()
+}
+
 onMounted(async () => {
   try {
     const data: any = await http.get('/public/settings')
-    siteLogo.value = data?.settings?.site_logo || ''
+    siteLogo.value = resolveAssetUrl(data?.settings?.site_logo || '')
   } catch {
     /* 拿不到就用默认字母块 */
   }

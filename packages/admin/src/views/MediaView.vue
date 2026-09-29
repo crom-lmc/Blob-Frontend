@@ -14,6 +14,7 @@ import {
 } from '@/api/content'
 import { isNotified } from '@/api/http'
 
+const apiOrigin = (import.meta.env.VITE_API_TARGET as string) || 'http://localhost:8080'
 const list = ref<MediaItem[]>([])
 const total = ref(0)
 const loading = ref(false)
@@ -21,6 +22,13 @@ const mode = ref<'grid' | 'list'>('grid')
 const selected = ref<MediaItem | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const settingsStore = useSettingsStore()
+
+function resolveAssetUrl(rawUrl: string) {
+  if (!rawUrl) return ''
+  if (/^(https?:)?\/\//i.test(rawUrl) || rawUrl.startsWith('data:')) return rawUrl
+  if (!apiOrigin) return rawUrl
+  return new URL(rawUrl, apiOrigin).toString()
+}
 
 /** 目录树 + 当前选中目录：-1=全部文件，>0=真实目录 */
 const folderTree = ref<MediaFolderNode[]>([])
@@ -78,7 +86,10 @@ async function load() {
   loading.value = true
   try {
     const res = await fetchMedia({ ...query, folderId: query.folderId })
-    list.value = res.list
+    list.value = (res.list || []).map((item) => ({
+      ...item,
+      url: resolveAssetUrl(item.url)
+    }))
     total.value = res.total
   } finally {
     loading.value = false
@@ -126,11 +137,12 @@ function onDrop(e: DragEvent) {
 }
 
 async function copyUrl(item: MediaItem) {
+  const resolvedUrl = resolveAssetUrl(item.url)
   try {
-    await navigator.clipboard.writeText(item.url)
+    await navigator.clipboard.writeText(resolvedUrl)
     ElMessage.success('链接已复制')
   } catch {
-    ElMessage.info(item.url)
+    ElMessage.info(resolvedUrl)
   }
 }
 
