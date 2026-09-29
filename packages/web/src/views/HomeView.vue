@@ -6,6 +6,7 @@ import { useThemeStore } from '@/stores/theme'
 import { useSiteStore } from '@/stores/site'
 import PostCard from '@/components/PostCard.vue'
 import BasePagination from '@/components/BasePagination.vue'
+import BaseCarousel from '@/components/BaseCarousel.vue'
 import SkeletonList from '@/components/SkeletonList.vue'
 import { useSeo } from '@/composables/useSeo'
 
@@ -27,6 +28,12 @@ const blockProps = (type: string) => blocks.value.find((b) => b.type === type)?.
 
 const pageSize = computed(() => userSize.value || Number(blockProps('latest').count) || site.pageSize || 10)
 const heroProps = computed(() => blockProps('hero'))
+/** 头部横幅配置的轮播项（{ image, link }；为空则回退为文字横幅） */
+const heroSlides = computed(() => {
+  const imgs = heroProps.value?.images
+  if (!Array.isArray(imgs)) return []
+  return imgs.filter((it: any) => (typeof it === 'string' ? !!it : !!it?.image))
+})
 
 const featured = computed(() => {
   const count = Number(blockProps('featured').count) || 3
@@ -89,15 +96,18 @@ useSeo({ title: '首页', description: site.settings.seo_desc })
 
 <template>
   <div class="home container">
-    <!-- Hero -->
-    <section v-if="hasBlock('hero')" class="hero" :class="`align-${heroProps.align || 'center'}`">
-      <h1 class="hero-title">{{ heroProps.title || site.title }}</h1>
-      <p class="hero-sub muted">{{ heroProps.subtitle || site.subtitle }}</p>
-      <div class="hero-actions">
-        <RouterLink to="/posts" class="btn btn-primary">开始阅读</RouterLink>
-        <RouterLink to="/archives" class="btn">浏览归档</RouterLink>
-      </div>
-    </section>
+    <!-- Hero：配置了轮播图则显示轮播，否则显示文字横幅 -->
+    <template v-if="hasBlock('hero')">
+      <BaseCarousel v-if="heroSlides.length" :items="heroSlides" :align="heroProps.align || 'center'" />
+      <section v-else class="hero" :class="`align-${heroProps.align || 'center'}`">
+        <h1 class="hero-title">{{ heroProps.title || site.title }}</h1>
+        <p class="hero-sub muted">{{ heroProps.subtitle || site.subtitle }}</p>
+        <div class="hero-actions">
+          <RouterLink to="/posts" class="btn btn-primary">开始阅读</RouterLink>
+          <RouterLink to="/archives" class="btn">浏览归档</RouterLink>
+        </div>
+      </section>
+    </template>
 
     <div class="stack">
       <!-- 精选 -->

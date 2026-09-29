@@ -54,7 +54,7 @@ export const DEFAULT_THEME: ThemeConfig = {
     postCardFields: ['cover', 'title', 'excerpt', 'meta', 'tags']
   },
   homeBlocks: [
-    { type: 'hero', enabled: true, order: 1, props: { title: '', subtitle: '', align: 'center' } },
+    { type: 'hero', enabled: true, order: 1, props: { title: '', subtitle: '', align: 'center', images: [] } },
     { type: 'featured', enabled: false, order: 2, props: { count: 3 } },
     { type: 'latest', enabled: true, order: 3, props: { count: 10 } },
     { type: 'tagCloud', enabled: true, order: 4, props: { count: 30 } },
