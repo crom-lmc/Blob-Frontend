@@ -241,6 +241,11 @@ export async function uploadMedia(file: File, folder = '', folderId?: number): P
   return res as unknown as MediaItem
 }
 
+/** 重命名 / 移动媒体文件：两个字段都可选，只更新传入的字段 */
+export function updateMedia(id: number, payload: { name?: string; folderId?: number }): Promise<void> {
+  return http.put(`/admin/media/${id}`, payload)
+}
+
 export function deleteMedia(id: number): Promise<void> {
   return http.delete(`/admin/media/${id}`)
 }

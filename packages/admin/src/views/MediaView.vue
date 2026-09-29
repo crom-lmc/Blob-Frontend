@@ -10,6 +10,7 @@ import {
   fetchMedia,
   fetchMediaFolderTree,
   renameMediaFolder,
+  updateMedia,
   uploadMedia
 } from '@/api/content'
 import { isNotified } from '@/api/http'
@@ -34,7 +35,13 @@ function resolveAssetUrl(rawUrl: string) {
 const folderTree = ref<MediaFolderNode[]>([])
 const currentFolderId = ref<number | undefined>(undefined)
 
-const query = reactive({ folderId: undefined as number | undefined, page: 1, size: 24 })
+const query = reactive({ folderId: undefined as number | undefined, keyword: '', page: 1, size: 24 })
+
+/** 搜索：回到第一页再查（keyword 由后端按 originalName / fileName 模糊匹配） */
+function onSearch() {
+  query.page = 1
+  load()
+}
 
 /** 是否选中了具体目录（上传必须落到具体目录，全部文件视图不可上传） */
 const hasCurrentFolder = computed(() => (query.folderId ?? -1) > 0)
@@ -206,6 +213,76 @@ async function onDeleteFolder(node: MediaFolderNode) {
   }
 }
 
+/* ---------- 媒体文件：重命名 / 移动 ---------- */
+
+/** 重命名（只改展示名 originalName，磁盘文件不变；扩展名不可修改） */
+async function onRename(item: MediaItem) {
+  const ext = /\.[^.]+$/.exec(item.originalName)?.[0] ?? ''
+  const base = ext ? item.originalName.slice(0, -ext.length) : item.originalName
+  try {
+    const { value } = await ElMessageBox.prompt(
+      ext ? '新的文件名称（后缀不支持修改）' : '新的文件名称',
+      '重命名',
+      { inputValue: base, inputPlaceholder: '文件名' }
+    )
+    if (!value?.trim()) return
+    let next = value.trim()
+    // 用户若手动输了原后缀，去掉，统一拼回原后缀
+    if (ext && next.toLowerCase().endsWith(ext.toLowerCase())) {
+      next = next.slice(0, -ext.length)
+    }
+    next = next + ext
+    if (next === item.originalName) return
+    await updateMedia(item.id, { name: next })
+    ElMessage.success('已重命名')
+    load()
+  } catch (e: any) {
+    if (e !== 'cancel' && e !== 'close' && !isNotified(e)) ElMessage.error('重命名失败')
+  }
+}
+
+/** 移动目标下拉：仅真实目录树（按层级缩进），不含「未分组」 */
+const folderOptions = computed(() => {
+  const out: { id: number; name: string }[] = []
+  const walk = (nodes: MediaFolderNode[], depth: number) => {
+    for (const n of nodes) {
+      out.push({ id: n.id, name: '　'.repeat(depth) + n.name })
+      if (n.children?.length) walk(n.children, depth + 1)
+    }
+  }
+  walk(folderTree.value, 0)
+  return out
+})
+
+const moveDialog = ref(false)
+const moveTarget = ref<MediaItem | null>(null)
+const moveFolderId = ref<number | undefined>(undefined)
+
+function openMove(item: MediaItem) {
+  moveTarget.value = item
+  moveFolderId.value = item.folderId ?? undefined
+  moveDialog.value = true
+}
+
+async function confirmMove() {
+  if (!moveTarget.value) return
+  if (moveFolderId.value === undefined) {
+    ElMessage.warning('请选择目标目录')
+    return
+  }
+  const id = moveTarget.value.id
+  const folderId = moveFolderId.value
+  try {
+    await updateMedia(id, { folderId })
+    ElMessage.success('已移动')
+    moveDialog.value = false
+    load()
+    loadTree()
+  } catch (e: any) {
+    if (!isNotified(e)) ElMessage.error('移动失败')
+  }
+}
+
 function formatSize(size: number) {
   if (size < 1024) return `${size} B`
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
@@ -260,6 +337,15 @@ onMounted(async () => {
           <el-radio-button label="grid">网格</el-radio-button>
           <el-radio-button label="list">列表</el-radio-button>
         </el-radio-group>
+        <el-input
+          v-model="query.keyword"
+          placeholder="搜索文件名"
+          clearable
+          size="small"
+          style="width: 200px"
+          @keyup.enter="onSearch"
+          @clear="onSearch"
+        />
         <div class="spacer" />
         <el-button type="primary" @click="triggerUpload">上传</el-button>
         <input ref="fileInput" type="file" multiple accept="image/*" style="display: none" @change="onFileChange" />
@@ -280,8 +366,10 @@ onMounted(async () => {
         <div v-for="m in list" :key="m.id" class="media-item" @click="selected = m">
           <img :src="m.url" :alt="m.originalName" />
           <div class="media-mask">
-            <el-button link type="primary" @click.stop="copyUrl(m)">复制链接</el-button>
-            <el-button link type="danger" @click.stop="remove(m)">删除</el-button>
+            <el-button size="small" @click.stop="copyUrl(m)">复制链接</el-button>
+            <el-button size="small" type="primary" @click.stop="onRename(m)">重命名</el-button>
+            <el-button size="small" type="warning" @click.stop="openMove(m)">移动</el-button>
+            <el-button size="small" type="danger" @click.stop="remove(m)">删除</el-button>
           </div>
           <p class="media-name">{{ m.originalName }}</p>
         </div>
@@ -301,9 +389,11 @@ onMounted(async () => {
           <template #default="{ row }">{{ formatSize(row.size) }}</template>
         </el-table-column>
         <el-table-column prop="createdAt" label="上传时间" width="170" />
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="copyUrl(row)">复制链接</el-button>
+            <el-button link @click="onRename(row)">重命名</el-button>
+            <el-button link @click="openMove(row)">移动</el-button>
             <el-button link type="danger" @click="remove(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -319,6 +409,22 @@ onMounted(async () => {
         @current-change="load"
         @size-change="onSizeChange"
       />
+
+      <!-- 移动到目录 -->
+      <el-dialog v-model="moveDialog" title="移动到目录" width="380px">
+        <el-form label-position="top" size="small">
+          <el-form-item label="目标目录">
+            <el-select v-model="moveFolderId" placeholder="请选择目标目录" style="width: 100%">
+              <el-option v-for="o in folderOptions" :key="o.id" :label="o.name" :value="o.id" />
+            </el-select>
+          </el-form-item>
+          <p class="text-muted">仅改变文件所属目录，磁盘上的物理文件位置不变。</p>
+        </el-form>
+        <template #footer>
+          <el-button @click="moveDialog = false">取消</el-button>
+          <el-button type="primary" @click="confirmMove">确定</el-button>
+        </template>
+      </el-dialog>
 
       <!-- 点击图片预览大图（复制链接/删除按钮已 stop 冒泡，不会触发） -->
       <el-image-viewer
@@ -453,10 +559,18 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  background: rgba(0, 0, 0, 0.45);
+  /* 四个操作按钮在窄卡片里换行显示 */
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.55);
   opacity: 0;
   transition: opacity 0.15s ease;
+}
+
+/* 遮罩里的按钮尺寸紧凑一些，避免盖住太多图片 */
+.media-mask :deep(.el-button + .el-button) {
+  margin-left: 0;
 }
 
 .media-item:hover .media-mask {
