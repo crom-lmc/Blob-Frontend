@@ -86,12 +86,11 @@ async function save(status?: ArticleItem['status']) {
       await updateArticle(id.value, payload)
     } else {
       const created = await createArticle(payload)
-      ElMessage.success('已保存')
       router.replace(`/articles/edit/${created.id}`)
     }
     dirty.value = false
     lastSaved.value = new Date().toLocaleTimeString()
-    if (!status) ElMessage.success('已保存')
+    ElMessage.success(status === 'published' ? '已发布' : '已保存')
   } catch (e: any) {
     if (!isNotified(e)) ElMessage.error(e?.message || '保存失败')
   } finally {
