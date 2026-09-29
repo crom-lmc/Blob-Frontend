@@ -9,6 +9,14 @@ const site = useSiteStore()
 const theme = useThemeStore()
 const router = useRouter()
 
+const apiOrigin = (import.meta.env.VITE_API_TARGET as string) || 'http://localhost:8080'
+
+function resolveAssetUrl(rawUrl: string) {
+  if (!rawUrl) return ''
+  if (/^(https?:)?\/\//i.test(rawUrl) || rawUrl.startsWith('data:')) return rawUrl
+  return new URL(rawUrl, apiOrigin).toString()
+}
+
 const keyword = ref('')
 const scrolled = ref(false)
 const menuOpen = ref(false)
@@ -57,7 +65,7 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
       </button>
 
       <RouterLink to="/" class="brand">
-        <img v-if="site.settings.site_logo" :src="site.settings.site_logo" class="brand-logo" alt="logo" />
+        <img v-if="site.settings.site_logo" :src="resolveAssetUrl(site.settings.site_logo)" class="brand-logo" alt="logo" />
         <span class="brand-title">{{ site.title }}</span>
       </RouterLink>
 
