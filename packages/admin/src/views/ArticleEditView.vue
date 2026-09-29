@@ -86,11 +86,14 @@ async function save(status?: ArticleItem['status']) {
       await updateArticle(id.value, payload)
     } else {
       const created = await createArticle(payload)
-      router.replace(`/articles/edit/${created.id}`)
+      // 新建：发布时直接去列表页，否则留在编辑器（地址补上 id）
+      if (status !== 'published') router.replace(`/articles/edit/${created.id}`)
     }
     dirty.value = false
     lastSaved.value = new Date().toLocaleTimeString()
     ElMessage.success(status === 'published' ? '已发布' : '已保存')
+    // 发布后回到文章列表，保存草稿则停留在当前页
+    if (status === 'published') router.push('/articles')
   } catch (e: any) {
     if (!isNotified(e)) ElMessage.error(e?.message || '保存失败')
   } finally {
