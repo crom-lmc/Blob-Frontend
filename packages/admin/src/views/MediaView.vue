@@ -285,7 +285,7 @@ onMounted(async () => {
           </div>
           <p class="media-name">{{ m.originalName }}</p>
         </div>
-        <el-empty v-if="!list.length" description="暂无媒体文件" />
+        <el-empty v-if="!list.length" class="media-empty" description="暂无媒体文件" />
       </div>
 
       <!-- 列表视图 -->
@@ -425,6 +425,12 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 12px;
+}
+
+/* 空状态横跨整行并居中显示 */
+.media-empty {
+  grid-column: 1 / -1;
+  justify-self: center;
 }
 
 .media-item {
