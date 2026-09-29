@@ -40,6 +40,9 @@ const featured = computed(() => {
   return [...articles.value].sort((a, b) => Number(b.isTop) - Number(a.isTop) || b.viewCount - a.viewCount).slice(0, count)
 })
 
+/** 精选文章里只要有一篇配了封面，就给没封面的补占位块保持高度一致；全都没有封面则不补 */
+const featuredHasCover = computed(() => featured.value.some((a) => !!a.cover))
+
 const cloudTags = computed(() => {
   const count = Number(blockProps('tagCloud').count) || 30
   return tags.value.slice(0, count)
@@ -117,7 +120,7 @@ useSeo({ title: '首页', description: site.settings.seo_desc })
           <RouterLink to="/posts" class="text-sm">查看全部 →</RouterLink>
         </div>
         <div class="featured-grid">
-          <PostCard v-for="a in featured" :key="a.id" :article="a" :placeholder-cover="true" />
+          <PostCard v-for="a in featured" :key="a.id" :article="a" :placeholder-cover="featuredHasCover" />
         </div>
       </section>
 
