@@ -92,8 +92,11 @@ async function save(status?: ArticleItem['status']) {
     dirty.value = false
     lastSaved.value = new Date().toLocaleTimeString()
     ElMessage.success(status === 'published' ? '已发布' : '已保存')
-    // 发布后回到文章列表，保存草稿则停留在当前页
-    if (status === 'published') router.push('/articles')
+    // 发布后稍作停顿（让用户看到提示）再回到文章列表；保存草稿停留在当前页
+    if (status === 'published') {
+      await new Promise((resolve) => setTimeout(resolve, 600))
+      router.push('/articles')
+    }
   } catch (e: any) {
     if (!isNotified(e)) ElMessage.error(e?.message || '保存失败')
   } finally {
