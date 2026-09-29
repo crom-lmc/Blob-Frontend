@@ -4,7 +4,7 @@ import type { ArticleItem } from '@blog/shared'
 import { useThemeStore } from '@/stores/theme'
 import { formatCount, formatDate } from '@/utils/format'
 
-const props = defineProps<{ article: ArticleItem; keyword?: string }>()
+const props = defineProps<{ article: ArticleItem; keyword?: string; placeholderCover?: boolean }>()
 const theme = useThemeStore()
 
 const fields = computed(() => theme.layout.postCardFields || [])
@@ -17,8 +17,14 @@ const link = computed(() => `/posts/${props.article.slug}`)
 
 <template>
   <article class="post-card" :class="[cardClass, `cover-${coverPosition}`]">
-    <RouterLink v-if="has('cover') && article.cover" :to="link" class="cover-wrap">
-      <img :src="article.cover" :alt="article.title" loading="lazy" />
+    <!-- 有封面用图片；无封面且开了占位时，用浅色纯色底占位，保证同排卡片高度一致 -->
+    <RouterLink
+      v-if="has('cover') && (article.cover || placeholderCover)"
+      :to="link"
+      class="cover-wrap"
+      :class="{ 'cover-placeholder': !article.cover }"
+    >
+      <img v-if="article.cover" :src="article.cover" :alt="article.title" loading="lazy" />
     </RouterLink>
 
     <div class="card-body">
@@ -80,6 +86,11 @@ const link = computed(() => `/posts/${props.article.slug}`)
   overflow: hidden;
   border-radius: var(--radius-md);
   flex-shrink: 0;
+}
+
+/* 无封面时的占位块：浅色纯色底 */
+.cover-placeholder {
+  background: var(--color-bg-subtle);
 }
 
 .cover-top .cover-wrap {

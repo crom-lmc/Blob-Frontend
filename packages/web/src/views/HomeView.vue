@@ -117,7 +117,7 @@ useSeo({ title: '首页', description: site.settings.seo_desc })
           <RouterLink to="/posts" class="text-sm">查看全部 →</RouterLink>
         </div>
         <div class="featured-grid">
-          <PostCard v-for="a in featured" :key="a.id" :article="a" />
+          <PostCard v-for="a in featured" :key="a.id" :article="a" :placeholder-cover="true" />
         </div>
       </section>
 
