@@ -92,7 +92,7 @@ onUnmounted(() => {
 
     <el-card shadow="never" v-loading="loading" class="trend-card">
       <template #header>
-        <span>近 30 天趋势（文章发布 / 评论）1</span>
+        <span>近 30 天趋势（文章发布 / 评论）2</span>
       </template>
       <div ref="chartEl" class="chart" />
     </el-card>
