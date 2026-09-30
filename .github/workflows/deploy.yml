@@ -1,0 +1,53 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 安装依赖并构建（npm workspaces，一次出 web + admin 两个 dist）
+        run: |
+          set -e
+          npm ci
+          npm run build
+
+      - name: 推送 web/dist → 服务器前台目录
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          source: "packages/web/dist/*"
+          target: "/opt/Blob-Frontend/packages/web/dist"
+          strip_components: 3
+
+      - name: 推送 admin/dist → 服务器后台目录
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          source: "packages/admin/dist/*"
+          target: "/opt/Blob-Frontend/packages/admin/dist"
+          strip_components: 3
+
+      - name: 重载 nginx 使新构建生效
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            nginx -s reload || systemctl reload nginx || true
