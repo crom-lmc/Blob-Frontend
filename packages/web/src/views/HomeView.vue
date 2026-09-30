@@ -116,8 +116,8 @@ useSeo({ title: '首页', description: site.settings.seo_desc })
       <!-- 精选 -->
       <section v-if="hasBlock('featured')" class="block">
         <div class="block-head">
-          <h2 class="block-title">精选文章1</h2>
-          <RouterLink to="/posts" class="text-sm">查看全部2 →</RouterLink>
+          <h2 class="block-title">精选文章</h2>
+          <RouterLink to="/posts" class="text-sm">查看全部 →</RouterLink>
         </div>
         <div class="featured-grid">
           <PostCard v-for="a in featured" :key="a.id" :article="a" :placeholder-cover="featuredHasCover" />
