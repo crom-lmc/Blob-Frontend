@@ -14,6 +14,7 @@ import {
   publishArticle,
   topArticle
 } from '@/api/content'
+import { isNotified } from '@/api/http'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
@@ -97,27 +98,49 @@ async function onExport(row: ArticleItem) {
   URL.revokeObjectURL(url)
 }
 
+/** 已发布的文章不允许删除：需先「转草稿」下线 */
+const isPublished = (row: ArticleItem) => row.status === 'published'
+
 async function onDelete(row: ArticleItem) {
+  if (isPublished(row)) {
+    ElMessage.warning('已发布的文章不允许删除，请先「转草稿」下线')
+    return
+  }
   try {
     await ElMessageBox.confirm(`确定删除《${row.title}》吗？`, '删除确认', { type: 'warning' })
   } catch {
     return
   }
-  await deleteArticle(row.id)
-  ElMessage.success('已删除')
-  load()
+  try {
+    await deleteArticle(row.id)
+    ElMessage.success('已删除')
+    load()
+  } catch (e: any) {
+    // 后端 2011 兜底：把具体原因提示出来
+    if (!isNotified(e)) ElMessage.error(e?.message || '删除失败')
+  }
 }
 
 async function batchDelete() {
   if (!selected.value.length) return
+  // 选中项里只要有一篇已发布就整批拒绝（与后端规则一致）
+  const published = selected.value.filter(isPublished)
+  if (published.length) {
+    ElMessage.warning(`选中的 ${published.length} 篇已发布，不允许删除，请先「转草稿」下线`)
+    return
+  }
   try {
     await ElMessageBox.confirm(`确定删除选中的 ${selected.value.length} 篇文章吗？`, '批量删除', { type: 'warning' })
   } catch {
     return
   }
-  await batchDeleteArticles(selected.value.map((i) => i.id))
-  ElMessage.success('批量删除完成')
-  load()
+  try {
+    await batchDeleteArticles(selected.value.map((i) => i.id))
+    ElMessage.success('批量删除完成')
+    load()
+  } catch (e: any) {
+    if (!isNotified(e)) ElMessage.error(e?.message || '批量删除失败')
+  }
 }
 
 onMounted(async () => {
@@ -195,7 +218,14 @@ onMounted(async () => {
           <el-button link @click="onToggle(row, 'publish')">{{ row.status === 'published' ? '转草稿' : '发布' }}</el-button>
           <el-button link @click="onToggle(row, 'top')">{{ row.isTop ? '取消置顶' : '置顶' }}</el-button>
           <el-button link @click="onExport(row)">导出</el-button>
-          <el-button link type="danger" @click="onDelete(row)">删除</el-button>
+          <el-button
+            link
+            type="danger"
+            :disabled="row.status === 'published'"
+            :title="row.status === 'published' ? '已发布的文章不允许删除，请先「转草稿」下线' : ''"
+            @click="onDelete(row)"
+            >删除</el-button
+          >
         </template>
       </el-table-column>
     </el-table>

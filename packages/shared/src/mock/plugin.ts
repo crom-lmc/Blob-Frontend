@@ -527,7 +527,13 @@ export function createMockApiPlugin(options: { webOrigin?: string } = {}): Plugi
         if (/^\/api\/admin\/articles\/\d+$/.test(path) && method === 'DELETE') {
           const id = Number(path.split('/').pop())
           const idx = MOCK_ARTICLES.findIndex((a) => a.id === id)
-          if (idx >= 0) MOCK_ARTICLES.splice(idx, 1)
+          if (idx >= 0) {
+            // 与后端一致：已发布文章不允许删除（2011）
+            if (MOCK_ARTICLES[idx].status === 'published') {
+              return fail(res, '已发布的文章不允许删除，请先下线', 2011)
+            }
+            MOCK_ARTICLES.splice(idx, 1)
+          }
           recalcCounts()
           return json(res, true)
         }
@@ -549,12 +555,17 @@ export function createMockApiPlugin(options: { webOrigin?: string } = {}): Plugi
         }
         if (path === '/api/admin/articles/batch/delete' && method === 'POST') {
           const body = await readBody(req)
-          for (const id of body.ids || []) {
+          const ids: number[] = body.ids || []
+          // 与后端一致：只要命中一篇已发布就整批拒绝（2011）
+          if (MOCK_ARTICLES.some((a) => ids.includes(a.id) && a.status === 'published')) {
+            return fail(res, '已发布的文章不允许删除，请先下线', 2011)
+          }
+          for (const id of ids) {
             const idx = MOCK_ARTICLES.findIndex((a) => a.id === id)
             if (idx >= 0) MOCK_ARTICLES.splice(idx, 1)
           }
           recalcCounts()
-          return json(res, (body.ids || []).length)
+          return json(res, ids.length)
         }
         if (/^\/api\/admin\/articles\/\d+\/export$/.test(path) && method === 'GET') {
           const id = Number(path.split('/')[4])
