@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { CategoryItem } from '@blog/shared'
 import { createCategory, deleteCategory, fetchCategories, updateCategory } from '@/api/content'
+import { isNotified } from '@/api/http'
 
 const list = ref<CategoryItem[]>([])
 const loading = ref(false)
@@ -49,9 +50,14 @@ async function remove(row: CategoryItem) {
   } catch {
     return
   }
-  await deleteCategory(row.id)
-  ElMessage.success('已删除')
-  load()
+  try {
+    await deleteCategory(row.id)
+    ElMessage.success('已删除')
+    load()
+  } catch (e: any) {
+    // 被文章引用时后端返回 2009，把具体原因提示出来
+    if (!isNotified(e)) ElMessage.error(e?.message || '删除失败')
+  }
 }
 
 const parentName = (id: number) => list.value.find((c) => c.id === id)?.name || '—'

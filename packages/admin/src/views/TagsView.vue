@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { TagItem } from '@blog/shared'
 import { colorFromName } from '@blog/shared'
 import { createTag, deleteTag, fetchTags, mergeTags, updateTag } from '@/api/content'
+import { isNotified } from '@/api/http'
 
 const list = ref<TagItem[]>([])
 const loading = ref(false)
@@ -47,9 +48,14 @@ async function remove(row: TagItem) {
   } catch {
     return
   }
-  await deleteTag(row.id)
-  ElMessage.success('已删除')
-  load()
+  try {
+    await deleteTag(row.id)
+    ElMessage.success('已删除')
+    load()
+  } catch (e: any) {
+    // 被文章引用时后端返回 2010，把具体原因提示出来
+    if (!isNotified(e)) ElMessage.error(e?.message || '删除失败')
+  }
 }
 
 /** 合并标签：sourceId 下的文章全部迁移到 targetId 后删除 sourceId */

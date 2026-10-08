@@ -642,6 +642,10 @@ export function createMockApiPlugin(options: { webOrigin?: string } = {}): Plugi
           const idx = MOCK_CATEGORIES.findIndex((c) => c.id === id)
           if (idx < 0) return fail(res, '分类不存在', 404)
           if (method === 'DELETE') {
+            // 与后端一致：被文章引用的分类不允许删除（2009）
+            if (MOCK_ARTICLES.some((a) => a.categoryId === id)) {
+              return fail(res, '该分类已被文章引用，不能删除', 2009)
+            }
             MOCK_CATEGORIES.splice(idx, 1)
             return json(res, true)
           }
@@ -681,6 +685,10 @@ export function createMockApiPlugin(options: { webOrigin?: string } = {}): Plugi
           const idx = MOCK_TAGS.findIndex((t) => t.id === id)
           if (idx < 0) return fail(res, '标签不存在', 404)
           if (method === 'DELETE') {
+            // 与后端一致：被文章引用的标签不允许删除（2010），可改用「合并标签」
+            if (MOCK_ARTICLES.some((a) => a.tags?.some((t) => t.id === id))) {
+              return fail(res, '该标签已被文章引用，不能删除', 2010)
+            }
             MOCK_TAGS.splice(idx, 1)
             return json(res, true)
           }
