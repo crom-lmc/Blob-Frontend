@@ -32,7 +32,10 @@ const heroProps = computed(() => blockProps('hero'))
 const heroSlides = computed(() => {
   const imgs = heroProps.value?.images
   if (!Array.isArray(imgs)) return []
-  return imgs.filter((it: any) => (typeof it === 'string' ? !!it : !!it?.image))
+  return imgs.filter((it: any) => {
+    if (typeof it === 'string') return !!it
+    return !!it?.image && it.published !== false
+  })
 })
 
 const featured = computed(() => {

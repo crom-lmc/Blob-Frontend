@@ -27,6 +27,7 @@ interface CarouselItem {
   note: string
   image: string
   isAd: boolean
+  published: boolean
   link: string
   title: string
   subtitle: string
@@ -47,13 +48,14 @@ function itemsOf(block: HomeBlock): CarouselItem[] {
   const list = raw.map((it) => {
     if (typeof it === 'string') {
       changed = true
-      return { note: '', image: it, isAd: false, link: '', title: '', subtitle: '' }
+      return { note: '', image: it, isAd: false, published: true, link: '', title: '', subtitle: '' }
     }
     if (
       !it ||
       typeof it.note !== 'string' ||
       typeof it.image !== 'string' ||
       typeof it.isAd !== 'boolean' ||
+      typeof it.published !== 'boolean' ||
       typeof it.link !== 'string' ||
       typeof it.title !== 'string' ||
       typeof it.subtitle !== 'string'
@@ -63,6 +65,7 @@ function itemsOf(block: HomeBlock): CarouselItem[] {
         note: String(it?.note ?? ''),
         image: String(it?.image ?? ''),
         isAd: !!it?.isAd,
+        published: typeof it?.published === 'boolean' ? it.published : true,
         link: String(it?.link ?? ''),
         title: String(it?.title ?? ''),
         subtitle: String(it?.subtitle ?? '')
@@ -75,7 +78,7 @@ function itemsOf(block: HomeBlock): CarouselItem[] {
 }
 
 function addImage(block: HomeBlock) {
-  itemsOf(block).push({ note: '', image: '', isAd: false, link: '', title: '', subtitle: '' })
+  itemsOf(block).push({ note: '', image: '', isAd: false, published: true, link: '', title: '', subtitle: '' })
 }
 
 function removeImage(block: HomeBlock, index: number) {
@@ -111,7 +114,7 @@ function pickImage(block: HomeBlock) {
     uploading.value = true
     try {
       const media = await uploadMedia(file, 'theme')
-      itemsOf(block).push({ note: '', image: media.url, isAd: false, link: '', title: '', subtitle: '' })
+      itemsOf(block).push({ note: '', image: media.url, isAd: false, published: true, link: '', title: '', subtitle: '' })
       ElMessage.success('上传成功')
     } catch (e: any) {
       ElMessage.error(e?.message || '上传失败')
@@ -159,6 +162,7 @@ function pickImage(block: HomeBlock) {
                     <el-input v-model="item.subtitle" placeholder="副标题（显示在图上，可留空）" size="small" />
                   </div>
                   <div class="carousel-row">
+                    <el-checkbox v-model="item.published" size="small">发布</el-checkbox>
                     <el-checkbox v-model="item.isAd" size="small">广告位</el-checkbox>
                     <el-input v-model="item.link" :disabled="!item.isAd" placeholder="跳转链接（勾选广告位后可填）" size="small" />
                   </div>
