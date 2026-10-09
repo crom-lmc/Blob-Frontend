@@ -48,7 +48,9 @@ function unbind() {
 function go(id: string) {
   const el = document.getElementById(id)
   if (!el) return
-  window.scrollTo({ top: el.offsetTop - 80, behavior: 'smooth' })
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const target = el.getBoundingClientRect().top + window.scrollY - 88
+  window.scrollTo({ top: target, behavior: 'smooth' })
 }
 
 watch(() => props.items, bind, { deep: true })

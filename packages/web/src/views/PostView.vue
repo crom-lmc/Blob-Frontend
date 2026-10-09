@@ -70,11 +70,12 @@ async function load() {
     // 优先使用后端渲染结果，缺失时前台兜底渲染 Markdown
     const raw = article.value.contentHtml || utils.renderMarkdown(article.value.contentMd || '')
     contentHtml.value = utils.withHeadingIds(raw)
-    // 目录：优先后端生成，缺失时从 HTML 提取
+    // 目录必须和正文实际生成的 heading id 对齐，否则点击会找不到对应章节
+    const generatedToc = utils.extractToc(contentHtml.value)
     const backendToc = article.value.toc || []
-    toc.value = backendToc.length
-      ? backendToc.map((x) => ({ id: x.id, text: x.text, level: x.level }))
-      : utils.extractToc(contentHtml.value)
+    toc.value = generatedToc.length
+      ? generatedToc
+      : backendToc.map((x) => ({ id: x.id, text: x.text, level: x.level }))
   } catch (e: any) {
     error.value = e?.message || '文章加载失败'
   } finally {
