@@ -9,7 +9,7 @@ const site = useSiteStore()
 const theme = useThemeStore()
 const router = useRouter()
 
-const apiOrigin = (import.meta.env.VITE_API_TARGET as string) || 'http://localhost:8080'
+const apiOrigin = (import.meta.env.VITE_API_TARGET as string) || 'http://localhost:80'
 
 function resolveAssetUrl(rawUrl: string) {
   if (!rawUrl) return ''

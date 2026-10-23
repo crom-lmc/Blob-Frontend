@@ -1,5 +1,5 @@
 /** 后端接口源（相对地址 /uploads/** 挂在该源下） */
-const apiOrigin = (import.meta.env.VITE_API_TARGET as string) || 'http://localhost:8080'
+const apiOrigin = (import.meta.env.VITE_API_TARGET as string) || 'http://localhost:80'
 
 /**
  * 把后端返回的地址解析为可直接用于 <img> 的完整地址：

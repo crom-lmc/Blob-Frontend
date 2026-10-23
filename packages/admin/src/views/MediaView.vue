@@ -15,7 +15,7 @@ import {
 } from '@/api/content'
 import { isNotified } from '@/api/http'
 
-const apiOrigin = (import.meta.env.VITE_API_TARGET as string) || 'http://localhost:8080'
+const apiOrigin = (import.meta.env.VITE_API_TARGET as string) || 'http://localhost:80'
 const list = ref<MediaItem[]>([])
 const total = ref(0)
 const loading = ref(false)

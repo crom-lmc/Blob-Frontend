@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
   const webHost = env.VITE_WEB_HOST || 'localhost'
   const webPort = Number(env.VITE_WEB_PORT || 5173)
   const adminPort = Number(env.VITE_ADMIN_PORT || 5174)
-  const apiTarget = env.VITE_API_TARGET || `http://${webHost}:8080`
+  const apiTarget = env.VITE_API_TARGET || `http://${webHost}:80`
   const webOrigin = env.VITE_WEB_ORIGIN || `http://${webHost}:${webPort}`
 
   return {

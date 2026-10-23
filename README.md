@@ -1,6 +1,6 @@
 # 博客系统前端（前台 + 后台）
 
-配套后端：`https://github.com/crom-lmc/Blob-Backend`（Spring Boot 3 + MyBatis-Plus 3.5.7 + MySQL 5.7 + Redis，端口 `8080`）。
+配套后端：`https://github.com/crom-lmc/Blob-Backend`（Spring Boot 3 + MyBatis-Plus 3.5.7 + MySQL 5.7 + Redis，端口 `80`）。
 前端只做展示与交互，**所有样式由后台下发的主题配置驱动**。
 
 ## 目录结构
@@ -33,14 +33,14 @@ npm run dev:admin           # 后台：默认 http://localhost:5174
 VITE_USE_MOCK=false
 VITE_WEB_HOST=localhost
 VITE_WEB_PORT=5173
-VITE_API_TARGET=http://localhost:8080
+VITE_API_TARGET=http://localhost:80
 
 # packages/admin/.env
 VITE_USE_MOCK=false
 VITE_WEB_HOST=localhost
 VITE_WEB_PORT=5173
 VITE_ADMIN_PORT=5174
-VITE_API_TARGET=http://localhost:8080
+VITE_API_TARGET=http://localhost:80
 VITE_WEB_ORIGIN=http://localhost:5173   # 主题编辑器 iframe 预览地址，可覆盖自动拼接结果
 ```
 
