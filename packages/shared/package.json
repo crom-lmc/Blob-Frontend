@@ -7,9 +7,13 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./markdown": "./src/markdown.ts",
+    "./styles/markdown.css": "./src/styles/markdown.css",
     "./mock": "./src/mock/plugin.ts"
   },
   "dependencies": {
+    "highlight.js": "^11.9.0",
+    "katex": "^0.16.9",
     "markdown-it": "^14.1.0"
   }
 }

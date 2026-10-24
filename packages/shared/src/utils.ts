@@ -39,3 +39,37 @@ export function deepMerge<T extends Record<string, any>>(base: T, patch?: Partia
 export function px(v: number | string): string {
   return typeof v === 'number' ? `${Math.round(v * 100) / 100}px` : v
 }
+
+/**
+ * 复制文本到剪贴板。
+ * navigator.clipboard 仅在安全上下文（HTTPS / localhost）可用，
+ * 通过局域网 IP（http://192.168.x.x）访问时为 undefined，需降级 execCommand。
+ * @returns 是否复制成功
+ */
+export async function copyText(text: string): Promise<boolean> {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch {
+      /* 权限被拒等情况降级 execCommand */
+    }
+  }
+  const ta = document.createElement('textarea')
+  ta.value = text
+  ta.setAttribute('readonly', '')
+  ta.style.position = 'fixed'
+  ta.style.top = '-9999px'
+  ta.style.opacity = '0'
+  document.body.appendChild(ta)
+  ta.select()
+  ta.setSelectionRange(0, text.length)
+  let ok = false
+  try {
+    ok = document.execCommand('copy')
+  } catch {
+    ok = false
+  }
+  document.body.removeChild(ta)
+  return ok
+}

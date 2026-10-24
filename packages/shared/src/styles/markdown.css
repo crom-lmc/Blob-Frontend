@@ -1,0 +1,296 @@
+/**
+ * Markdown 正文样式（前后台共用，配合 shared/src/markdown.ts 渲染管线）。
+ *
+ * 所有主题变量都带兜底值：
+ * - 前台：运行时注入的 <style id="theme-vars"> 会覆盖兜底值，跟随主题变化；
+ * - 后台：没有主题变量，直接使用兜底值（与默认主题一致），
+ *   保证管理端预览效果与前台默认主题一致。
+ */
+
+/* ============================ 排版 ============================ */
+
+.markdown-body {
+  font-size: var(--font-size-base, 16px);
+  line-height: var(--line-height, 1.75);
+  color: var(--color-text, #1f2328);
+  font-family: var(--font-body, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif);
+  word-wrap: break-word;
+}
+
+.markdown-body > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  font-family: var(--font-heading, inherit);
+  font-weight: var(--heading-weight, 700);
+  line-height: 1.35;
+  color: var(--color-text, #1f2328);
+  margin: var(--space-4, 16px) 0 var(--space-3, 12px);
+  scroll-margin-top: calc(var(--header-height, 64px) + var(--space-4, 16px));
+}
+
+.markdown-body h1 {
+  font-size: var(--font-size-h1, 31px);
+}
+.markdown-body h2 {
+  font-size: var(--font-size-h2, 25px);
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  padding-bottom: var(--space-2, 8px);
+}
+.markdown-body h3 {
+  font-size: var(--font-size-h3, 22px);
+}
+.markdown-body h4 {
+  font-size: var(--font-size-h4, 20px);
+}
+.markdown-body h5 {
+  font-size: var(--font-size-h5, 19px);
+}
+.markdown-body h6 {
+  font-size: var(--font-size-h6, 17px);
+}
+
+.markdown-body p {
+  margin: 0 0 var(--space-4, 16px);
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: var(--space-6, 24px);
+  margin: 0 0 var(--space-4, 16px);
+}
+
+.markdown-body li {
+  margin-bottom: var(--space-1, 4px);
+}
+
+/* 任务列表（- [ ] / - [x]，由 enhanceHtml 转换） */
+.markdown-body li.task-item {
+  list-style: none;
+}
+
+.markdown-body .task-checkbox {
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+
+.markdown-body blockquote {
+  margin: 0 0 var(--space-4, 16px);
+  padding: var(--space-2, 8px) var(--space-4, 16px);
+  border-left: 4px solid var(--color-primary, #4f46e5);
+  background: var(--color-bg-subtle, #f7f8fa);
+  border-radius: 0 var(--radius-md, 10px) var(--radius-md, 10px) 0;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.markdown-body img {
+  max-width: 100%;
+  display: block;
+  border-radius: var(--radius-md, 10px);
+  margin: var(--space-3, 12px) 0;
+  cursor: zoom-in;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 var(--space-4, 16px);
+  font-size: var(--font-size-sm, 14px);
+  display: block;
+  overflow-x: auto;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--color-border, #e5e7eb);
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  text-align: left;
+}
+
+.markdown-body th {
+  background: var(--color-bg-subtle, #f7f8fa);
+  font-weight: var(--heading-weight, 700);
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  margin: var(--space-6, 24px) 0;
+}
+
+/* ============================ 代码 ============================ */
+
+.markdown-body code {
+  font-family: var(--font-code, 'JetBrains Mono', Consolas, Monaco, monospace);
+  font-size: var(--font-size-sm, 14px);
+  background: var(--color-bg-subtle, #f7f8fa);
+  padding: 2px var(--space-1, 4px);
+  border-radius: var(--radius-sm, 6px);
+}
+
+/* ============================ 代码块 ============================ */
+/* 对齐管理端 md-editor-v3 预览：暗色背景 + mac 圆点 + 语言 + 复制代码 + 行号 */
+
+.md-code-block {
+  margin: 0 0 var(--space-4, 16px);
+  border-radius: var(--radius-md, 10px);
+  overflow: hidden;
+  background: #282c34;
+  font-size: 13px;
+}
+
+.md-code-block__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  padding: 8px 12px;
+  background: #21252b;
+}
+
+.md-code-block__dots {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.md-code-block__dots i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: block;
+}
+
+.md-code-block__dots i:nth-child(1) {
+  background: #ff5f56;
+}
+.md-code-block__dots i:nth-child(2) {
+  background: #ffbd2e;
+}
+.md-code-block__dots i:nth-child(3) {
+  background: #27c93f;
+}
+
+.md-code-block__lang {
+  color: #9aa0a6;
+  font-size: 12px;
+  font-family: var(--font-code, 'JetBrains Mono', Consolas, Monaco, monospace);
+}
+
+.md-code-block__copy {
+  margin-left: auto;
+  padding: 2px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid #3a3f4b;
+  background: transparent;
+  color: #9aa0a6;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.md-code-block__copy:hover {
+  color: #fff;
+  border-color: #5c6370;
+  background: #2c313a;
+}
+
+.md-code-block__body {
+  display: flex;
+  align-items: stretch;
+  background: #282c34;
+}
+
+.md-code-block__gutter {
+  list-style: none;
+  margin: 0;
+  padding: 12px 0;
+  text-align: right;
+  color: #5c6370;
+  background: #282c34;
+  user-select: none;
+  font-family: var(--font-code, 'JetBrains Mono', Consolas, Monaco, monospace);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.md-code-block__gutter li {
+  padding: 0 12px;
+}
+
+.md-code-block__body pre {
+  margin: 0;
+  padding: 12px 16px;
+  background: transparent;
+  overflow-x: auto;
+  flex: 1;
+}
+
+.md-code-block__body pre code,
+.md-code-block__body code {
+  background: transparent;
+  padding: 0;
+  font-family: var(--font-code, 'JetBrains Mono', Consolas, Monaco, monospace);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #abb2bf;
+  white-space: pre;
+}
+
+/* 代码高亮：Atom One Dark 配色（与管理端暗色代码块一致） */
+.md-code-block .hljs-comment,
+.md-code-block .hljs-quote {
+  color: #5c6370;
+  font-style: italic;
+}
+
+.md-code-block .hljs-keyword,
+.md-code-block .hljs-selector-tag,
+.md-code-block .hljs-literal,
+.md-code-block .hljs-built_in {
+  color: #c678dd;
+}
+
+.md-code-block .hljs-string,
+.md-code-block .hljs-regexp,
+.md-code-block .hljs-addition,
+.md-code-block .hljs-attr,
+.md-code-block .hljs-attribute {
+  color: #98c379;
+}
+
+.md-code-block .hljs-number,
+.md-code-block .hljs-symbol,
+.md-code-block .hljs-meta {
+  color: #d19a66;
+}
+
+.md-code-block .hljs-title,
+.md-code-block .hljs-title.function_,
+.md-code-block .hljs-section,
+.md-code-block .hljs-name {
+  color: #61afef;
+}
+
+.md-code-block .hljs-type,
+.md-code-block .hljs-class .hljs-title,
+.md-code-block .hljs-variable,
+.md-code-block .hljs-template-variable,
+.md-code-block .hljs-params {
+  color: #e5c07b;
+}
+
+.md-code-block .hljs-deletion {
+  color: #e06c75;
+}
+
+/* ============================ KaTeX 适配 ============================ */
+
+.katex-display {
+  overflow-x: auto;
+  padding: var(--space-2, 8px) 0;
+}

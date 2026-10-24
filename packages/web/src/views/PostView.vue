@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, ref, watch, type ComponentPublicInstance } from 'vue'
 import { useRoute } from 'vue-router'
 import type { ArticleDetail } from '@blog/shared'
+import { copyText } from '@blog/shared'
 import { fetchArticle, likeArticle } from '@/api/public'
 import { useSiteStore } from '@/stores/site'
 import { useThemeStore } from '@/stores/theme'
@@ -9,14 +10,14 @@ import CommentSection from '@/components/CommentSection.vue'
 import TocPanel from '@/components/TocPanel.vue'
 import SkeletonList from '@/components/SkeletonList.vue'
 import EmptyState from '@/components/EmptyState.vue'
-import type { MarkdownUtils } from '@/utils/markdown'
+import type { MarkdownUtils } from '@blog/shared/markdown'
 import { formatDate, formatCount } from '@/utils/format'
 import { useSeo } from '@/composables/useSeo'
 
 /** Markdown 兜底渲染按需加载（markdown-it + KaTeX 较大，正常情况后端已返回 content_html） */
 let mdUtils: MarkdownUtils | null = null
 async function getMdUtils(): Promise<MarkdownUtils> {
-  if (!mdUtils) mdUtils = await import('@/utils/markdown')
+  if (!mdUtils) mdUtils = await import('@blog/shared/markdown')
   return mdUtils
 }
 
@@ -67,9 +68,9 @@ async function load() {
     article.value = await fetchArticle(slug.value)
     await nextTick()
     const utils = await getMdUtils()
-    // 优先使用后端渲染结果，缺失时前台兜底渲染 Markdown
+    // 优先使用后端渲染结果，缺失时前台兜底渲染 Markdown；统一增强（代码块/公式/任务列表）
     const raw = article.value.contentHtml || utils.renderMarkdown(article.value.contentMd || '')
-    contentHtml.value = utils.withHeadingIds(raw)
+    contentHtml.value = utils.withHeadingIds(utils.enhanceHtml(raw))
     // 目录必须和正文实际生成的 heading id 对齐，否则点击会找不到对应章节
     const generatedToc = utils.extractToc(contentHtml.value)
     const backendToc = article.value.toc || []
@@ -95,26 +96,18 @@ async function like() {
   }
 }
 
-/** 正文渲染后绑定代码复制按钮 */
+/** 正文渲染后绑定代码复制按钮（渲染管线已输出 .md-code-block__copy[data-copy]） */
 function bindCodeCopy(el: HTMLElement) {
-  el.querySelectorAll<HTMLElement>('pre').forEach((pre) => {
-    if (pre.querySelector('.code-copy')) return
-    const btn = document.createElement('button')
-    btn.type = 'button'
-    btn.className = 'code-copy'
-    btn.textContent = '复制'
+  el.querySelectorAll<HTMLElement>('[data-copy]').forEach((btn) => {
+    if (btn.dataset.bound) return
+    btn.dataset.bound = '1'
     btn.addEventListener('click', async () => {
-      const code = pre.querySelector('code')?.textContent || ''
-      try {
-        await navigator.clipboard.writeText(code)
-        btn.textContent = '已复制'
-      } catch {
-        btn.textContent = '复制失败'
-      }
-      setTimeout(() => (btn.textContent = '复制'), 1600)
+      const code = btn.closest('.md-code-block')?.querySelector('code')?.textContent || ''
+      const label = btn.dataset.label || btn.textContent || '复制代码'
+      btn.dataset.label = label
+      btn.textContent = (await copyText(code)) ? '已复制' : '复制失败'
+      setTimeout(() => (btn.textContent = label), 1600)
     })
-    pre.style.position = 'relative'
-    pre.appendChild(btn)
   })
 }
 

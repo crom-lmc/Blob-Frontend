@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { MediaFolderNode, MediaItem } from '@blog/shared'
+import { copyText } from '@blog/shared'
 import {
   createMediaFolder,
   deleteMedia,
@@ -145,10 +146,9 @@ function onDrop(e: DragEvent) {
 
 async function copyUrl(item: MediaItem) {
   const resolvedUrl = resolveAssetUrl(item.url)
-  try {
-    await navigator.clipboard.writeText(resolvedUrl)
+  if (await copyText(resolvedUrl)) {
     ElMessage.success('链接已复制')
-  } catch {
+  } else {
     ElMessage.info(resolvedUrl)
   }
 }

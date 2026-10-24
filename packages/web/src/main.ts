@@ -3,6 +3,8 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import './styles/base.css'
+// Markdown 正文样式已下沉到 shared（与后台预览共用同一份）
+import '@blog/shared/styles/markdown.css'
 import 'katex/dist/katex.min.css'
 import { useThemeStore } from './stores/theme'
 import { useSiteStore } from './stores/site'

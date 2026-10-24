@@ -18,6 +18,7 @@
     "paths": {
       "@/*": ["src/*"],
       "@blog/shared": ["../shared/src/index.ts"],
+      "@blog/shared/markdown": ["../shared/src/markdown.ts"],
       "@blog/shared/mock": ["../shared/src/mock/plugin.ts"]
     }
   },
