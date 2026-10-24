@@ -81,8 +81,6 @@ onMounted(refreshCaptcha)
         </el-form-item>
         <el-button class="submit" type="primary" :loading="loading" @click="submit">登录</el-button>
       </el-form>
-
-      <p class="tip text-muted">默认账号见后端 DataInitializer 初始化数据（admin / author）</p>
     </div>
   </div>
 </template>
@@ -137,11 +135,5 @@ onMounted(refreshCaptcha)
 
 .submit {
   width: 100%;
-}
-
-.tip {
-  margin: 14px 0 0;
-  font-size: 12px;
-  text-align: center;
 }
 </style>
