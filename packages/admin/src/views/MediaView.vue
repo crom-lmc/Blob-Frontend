@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useSettingsStore } from '@/stores/settings'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { MediaFolderNode, MediaItem } from '@blog/shared'
 import { copyText } from '@blog/shared'
@@ -23,7 +22,6 @@ const loading = ref(false)
 const mode = ref<'grid' | 'list'>('grid')
 const selected = ref<MediaItem | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
-const settingsStore = useSettingsStore()
 
 function resolveAssetUrl(rawUrl: string) {
   if (!rawUrl) return ''
@@ -36,7 +34,7 @@ function resolveAssetUrl(rawUrl: string) {
 const folderTree = ref<MediaFolderNode[]>([])
 const currentFolderId = ref<number | undefined>(undefined)
 
-const query = reactive({ folderId: undefined as number | undefined, keyword: '', page: 1, size: 24 })
+const query = reactive({ folderId: undefined as number | undefined, keyword: '', page: 1, size: 50 })
 
 /** 搜索：回到第一页再查（keyword 由后端按 originalName / fileName 模糊匹配） */
 function onSearch() {
@@ -47,7 +45,7 @@ function onSearch() {
 /** 是否选中了具体目录（上传必须落到具体目录，全部文件视图不可上传） */
 const hasCurrentFolder = computed(() => (query.folderId ?? -1) > 0)
 
-const pageSizeOptions = [10, 20, 30, 50, 100]
+const pageSizeOptions = [50, 100]
 function onSizeChange(s: number) {
   query.size = s
   query.page = 1
@@ -290,8 +288,6 @@ function formatSize(size: number) {
 }
 
 onMounted(async () => {
-  await settingsStore.load()
-  query.size = settingsStore.defaultPageSize
   loadTree()
   load()
 })

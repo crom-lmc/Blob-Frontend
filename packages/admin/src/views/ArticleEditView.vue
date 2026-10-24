@@ -14,6 +14,30 @@ const router = useRouter()
 const id = computed(() => (route.params.id ? Number(route.params.id) : 0))
 const categories = ref<CategoryItem[]>([])
 const tags = ref<TagItem[]>([])
+
+/**
+ * 归一化分类为树：真实后端 /admin/categories 返回树（含 children），
+ * mock 返回平铺列表（parentId 关联）。统一重建为树，供 el-tree-select 使用。
+ */
+function normalizeCategoryTree(input: CategoryItem[]): CategoryItem[] {
+  const flat: CategoryItem[] = []
+  const walk = (items: CategoryItem[]) => {
+    for (const it of items) {
+      flat.push({ ...it, parentId: it.parentId ?? 0, children: undefined })
+      if (it.children?.length) walk(it.children)
+    }
+  }
+  walk(input || [])
+  const map = new Map<number, CategoryItem>()
+  flat.forEach((it) => map.set(it.id, { ...it, children: [] }))
+  const roots: CategoryItem[] = []
+  for (const it of map.values()) {
+    const parent = it.parentId ? map.get(it.parentId) : undefined
+    if (parent) parent.children!.push(it)
+    else roots.push(it)
+  }
+  return roots
+}
 const saving = ref(false)
 const loading = ref(false)
 const dirty = ref(false)
@@ -141,7 +165,7 @@ watch(form, () => (dirty.value = true), { deep: true })
 
 onMounted(async () => {
   await load()
-  categories.value = await fetchCategories()
+  categories.value = normalizeCategoryTree(await fetchCategories())
   tags.value = await fetchTags()
   startAutoSave()
 })
@@ -186,9 +210,18 @@ onUnmounted(() => clearInterval(timer))
               <img v-if="form.cover" :src="form.cover" class="cover-preview" alt="封面预览" />
             </el-form-item>
             <el-form-item label="分类">
-              <el-select v-model="form.categoryId" placeholder="选择分类" clearable style="width: 100%">
-                <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
-              </el-select>
+              <el-tree-select
+                v-model="form.categoryId"
+                :data="categories"
+                node-key="id"
+                :props="{ label: 'name', children: 'children' }"
+                :render-after-expand="false"
+                default-expand-all
+                clearable
+                check-strictly
+                placeholder="选择分类（任意层级）"
+                style="width: 100%"
+              />
             </el-form-item>
             <el-form-item label="标签">
               <el-select v-model="form.tagIds" multiple placeholder="选择标签" style="width: 100%">
