@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { ArticleItem } from '@blog/shared'
 import { useThemeStore } from '@/stores/theme'
+import { resolveAssetUrl } from '@/utils/asset'
 import { formatCount, formatDate } from '@/utils/format'
 
 const props = defineProps<{ article: ArticleItem; keyword?: string; placeholderCover?: boolean }>()
@@ -24,7 +25,12 @@ const link = computed(() => `/posts/${props.article.slug}`)
       class="cover-wrap"
       :class="{ 'cover-placeholder': !article.cover }"
     >
-      <img v-if="article.cover" :src="article.cover" :alt="article.title" loading="lazy" />
+      <img
+        v-if="article.cover"
+        :src="resolveAssetUrl(article.cover)"
+        :alt="article.title"
+        loading="lazy"
+      />
     </RouterLink>
 
     <div class="card-body">

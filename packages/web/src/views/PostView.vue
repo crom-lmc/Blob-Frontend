@@ -12,6 +12,7 @@ import SkeletonList from '@/components/SkeletonList.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import type { MarkdownUtils } from '@blog/shared/markdown'
 import { formatDate, formatCount } from '@/utils/format'
+import { normalizeHtmlAssets, resolveAssetUrl } from '@/utils/asset'
 import { useSeo } from '@/composables/useSeo'
 
 /** Markdown 兜底渲染按需加载（markdown-it + KaTeX 较大，正常情况后端已返回 content_html） */
@@ -70,7 +71,8 @@ async function load() {
     const utils = await getMdUtils()
     // 优先使用后端渲染结果，缺失时前台兜底渲染 Markdown；统一增强（代码块/公式/任务列表）
     const raw = article.value.contentHtml || utils.renderMarkdown(article.value.contentMd || '')
-    contentHtml.value = utils.withHeadingIds(utils.enhanceHtml(raw))
+    // 兜底：正文里若残留 http://旧IP:8080/uploads/** 这类绝对地址，统一降级为同源相对路径
+    contentHtml.value = utils.withHeadingIds(utils.enhanceHtml(normalizeHtmlAssets(raw)))
     // 目录必须和正文实际生成的 heading id 对齐，否则点击会找不到对应章节
     const generatedToc = utils.extractToc(contentHtml.value)
     const backendToc = article.value.toc || []
@@ -180,7 +182,12 @@ useSeo(() => ({
             </div>
           </header>
 
-          <img v-if="article.cover" class="post-cover" :src="article.cover" :alt="article.title" />
+          <img
+            v-if="article.cover"
+            class="post-cover"
+            :src="resolveAssetUrl(article.cover)"
+            :alt="article.title"
+          />
 
           <!-- 正文：v-html 内容来自后端渲染并做过白名单过滤 -->
           <div

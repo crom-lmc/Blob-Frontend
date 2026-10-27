@@ -9,6 +9,7 @@ import type { MarkdownUtils } from '@blog/shared/markdown'
 import { useSiteStore } from '@/stores/site'
 import { useSeo } from '@/composables/useSeo'
 import EmptyState from '@/components/EmptyState.vue'
+import { normalizeHtmlAssets } from '@/utils/asset'
 
 const route = useRoute()
 const theme = useThemeStore()
@@ -38,7 +39,7 @@ async function load() {
     if (!html && page.value.contentMd) {
       html = utils.renderMarkdown(page.value.contentMd)
     }
-    contentHtml.value = utils.enhanceHtml(html)
+    contentHtml.value = utils.enhanceHtml(normalizeHtmlAssets(html))
   } catch {
     page.value = null
     contentHtml.value = ''
