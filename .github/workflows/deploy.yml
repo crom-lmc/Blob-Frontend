@@ -42,6 +42,46 @@ jobs:
           target: "/opt/Blob-Frontend/packages/admin/dist"
           strip_components: 3
 
+      # scp-action 只覆盖同名文件、不删除旧文件，历史 hash 的 chunk 会一直堆积。
+      # 这里按 mtime 保留最近 KEEP 个，并强制保护当前 index.html 引用的文件。
+      # 调大 KEEP 可保留更多历史版本（web 一次构建约 93 个、admin 约 140 个文件）。
+      - name: 清理历史 assets（保留最近 600 个 + 当前 index.html 引用）
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            KEEP=600
+            export LC_ALL=C
+            for name in web admin; do
+              dist="/opt/Blob-Frontend/packages/$name/dist"
+              ad="$dist/assets"
+              if [ ! -d "$ad" ]; then
+                echo "[$name] 跳过：$ad 不存在"
+                continue
+              fi
+              total=$(find "$ad" -maxdepth 1 -type f | wc -l)
+              if [ "$total" -le "$KEEP" ]; then
+                echo "[$name] 现有 $total 个，未超过阈值 $KEEP，无需清理"
+                continue
+              fi
+              grep -oE 'assets/[A-Za-z0-9._@/-]+' "$dist/index.html" 2>/dev/null \
+                | sed 's|^assets/||' | sort -u > "/tmp/wl_$name.txt" || true
+              find "$ad" -maxdepth 1 -type f -printf '%T@ %f\n' | sort -rn \
+                | head -n "$KEEP" | cut -d' ' -f2- > "/tmp/keep_$name.txt"
+              cat "/tmp/wl_$name.txt" >> "/tmp/keep_$name.txt"
+              sort -u -o "/tmp/keep_$name.txt" "/tmp/keep_$name.txt"
+              find "$ad" -maxdepth 1 -type f -printf '%f\n' | sort > "/tmp/all_$name.txt"
+              comm -23 "/tmp/all_$name.txt" "/tmp/keep_$name.txt" > "/tmp/del_$name.txt" || true
+              removed=$(wc -l < "/tmp/del_$name.txt" | tr -d ' ')
+              if [ "$removed" -gt 0 ]; then
+                ( cd "$ad" && xargs -r -a "/tmp/del_$name.txt" rm -f -- )
+              fi
+              echo "[$name] 删除 $removed 个，剩余 $(find "$ad" -maxdepth 1 -type f | wc -l) 个"
+            done
+
       - name: 重载 nginx 使新构建生效
         uses: appleboy/ssh-action@v1
         with:
