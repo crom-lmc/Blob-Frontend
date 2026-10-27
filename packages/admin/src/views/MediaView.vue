@@ -15,7 +15,8 @@ import {
 } from '@/api/content'
 import { isNotified } from '@/api/http'
 
-const apiOrigin = (import.meta.env.VITE_API_TARGET as string) || 'http://localhost:80'
+/** 生产留空 = 同源（nginx 反代 /uploads），避免把域名/IP 写死进构建产物 */
+const apiOrigin = (import.meta.env.VITE_API_TARGET as string) || ''
 const list = ref<MediaItem[]>([])
 const total = ref(0)
 const loading = ref(false)

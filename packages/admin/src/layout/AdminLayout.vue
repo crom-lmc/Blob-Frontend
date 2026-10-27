@@ -14,7 +14,8 @@ const auth = useAuthStore()
 const collapsed = ref(false)
 
 /** 站点 logo（公开接口，无需管理员权限）；为空时回退为字母块 */
-const apiOrigin = (import.meta.env.VITE_API_TARGET as string) || 'http://localhost:80'
+/** 生产留空 = 同源（nginx 反代 /uploads），避免把域名/IP 写死进构建产物 */
+const apiOrigin = (import.meta.env.VITE_API_TARGET as string) || ''
 const siteLogo = ref('')
 
 function resolveAssetUrl(rawUrl: string) {
